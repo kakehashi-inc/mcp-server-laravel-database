@@ -3,7 +3,7 @@
 ## 前提条件
 
 - Node.js 22.0.0以上
-- npm（またはYarn）
+- Yarn 4.0.0以上
 - Laravelプロジェクト（テスト用）
 
 ## 開発環境のセットアップ
@@ -18,13 +18,23 @@ cd mcp-server-laravel-database
 ### 2. 依存関係のインストール
 
 ```bash
-npm install
+yarn install
 ```
 
 これにより以下の依存関係がインストールされます：
 - MCP SDK
 - データベースドライバ（MySQL、PostgreSQL、MariaDB、SQLite）
 - 開発ツール（TypeScript、Vite、Vitest）
+
+### 3. Yarnの設定
+
+プロジェクトはYarn 4を使用し、以下の設定（`.yarnrc.yml`）を持っています：
+
+```yaml
+enableGlobalCache: true
+nodeLinker: node-modules
+nmMode: hardlinks-global
+```
 
 ## 開発ワークフロー
 
@@ -33,7 +43,7 @@ npm install
 Viteを使用してプロジェクトをビルド：
 
 ```bash
-npm run build
+yarn build
 ```
 
 これにより：
@@ -47,7 +57,7 @@ npm run build
 ホットリロード付きで開発モードでサーバーを実行：
 
 ```bash
-npm run dev
+yarn dev
 ```
 
 これは`vite-node`を使用してビルドなしで直接TypeScriptを実行します。
@@ -57,13 +67,13 @@ npm run dev
 テストスイートを実行：
 
 ```bash
-npm test
+yarn test
 ```
 
 カバレッジ付きでテストを実行：
 
 ```bash
-npm run test:coverage
+yarn test:coverage
 ```
 
 ### 実際のデータベースでテスト
@@ -73,7 +83,7 @@ npm run test:coverage
 3. Laravel `.env`ファイルを指定してサーバーを実行：
 
 ```bash
-npm run dev -- --env /path/to/laravel/.env
+yarn dev -- --env /path/to/laravel/.env
 ```
 
 ## プロジェクト構造
@@ -177,7 +187,7 @@ export type DatabaseType = 'mysql' | 'pgsql' | 'mariadb' | 'sqlite' | 'newdb';
 デバッグログを有効化：
 
 ```bash
-npm run dev -- --env /path/to/.env --log-level debug
+yarn dev -- --env /path/to/.env --log-level debug
 ```
 
 ## よくある問題
@@ -208,7 +218,7 @@ import { BaseConnector } from './base';
 
 ```bash
 rm -rf dist
-npm run build
+yarn build
 ```
 
 ## コントリビューション

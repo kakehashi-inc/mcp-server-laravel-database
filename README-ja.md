@@ -18,20 +18,12 @@ Laravelアプリケーションのデータベースへのシームレスなア�
 - 🔐 **SSHトンネリング**: リモートデータベースへの安全な接続
 - 📦 **簡単な統合**: Claude DesktopとCursorで動作
 
-## インストール
-
-### npxを使用（推奨）
+## 使い方
 
 インストール不要！npxで直接使用できます：
 
 ```bash
 npx mcp-server-laravel-database --env /path/to/laravel/.env
-```
-
-### グローバルインストール
-
-```bash
-npm install -g mcp-server-laravel-database
 ```
 
 ## クイックスタート
@@ -41,7 +33,7 @@ npm install -g mcp-server-laravel-database
 Laravelの`.env`ファイルを指定します：
 
 ```bash
-mcp-server-laravel-database --env /path/to/your/laravel/.env
+npx mcp-server-laravel-database --env /path/to/your/laravel/.env
 ```
 
 ### 2. Claude Desktopとの使用
@@ -128,7 +120,7 @@ FORWARD_DB_PORT=13306    # Laravel Sailポート（オプション）
 ### MySQL接続
 
 ```bash
-mcp-server-laravel-database \
+npx mcp-server-laravel-database \
   --db-connection mysql \
   --db-host localhost \
   --db-port 3306 \
@@ -141,7 +133,7 @@ mcp-server-laravel-database \
 ### PostgreSQL接続
 
 ```bash
-mcp-server-laravel-database \
+npx mcp-server-laravel-database \
   --db-connection pgsql \
   --db-host localhost \
   --db-port 5432 \
@@ -154,7 +146,7 @@ mcp-server-laravel-database \
 ### SQLiteデータベース
 
 ```bash
-mcp-server-laravel-database \
+npx mcp-server-laravel-database \
   --db-connection sqlite \
   --db-database /path/to/database.sqlite \
   --readonly
@@ -165,7 +157,7 @@ mcp-server-laravel-database \
 Laravel Sailプロジェクトの場合、`.env`ファイルを指定するだけで、サーバーが自動的に`FORWARD_DB_PORT`を検出して使用します：
 
 ```bash
-mcp-server-laravel-database --env /path/to/laravel/.env
+npx mcp-server-laravel-database --env /path/to/laravel/.env
 ```
 
 ### SSHトンネル経由
@@ -173,7 +165,7 @@ mcp-server-laravel-database --env /path/to/laravel/.env
 リモートデータベースに安全に接続：
 
 ```bash
-mcp-server-laravel-database \
+npx mcp-server-laravel-database \
   --env /path/to/.env \
   --ssh-host remote.example.com \
   --ssh-user deploy \
@@ -238,67 +230,14 @@ mcp-server-laravel-database \
 5. ✅ 可能な場合はデータベース接続にSSL/TLSを有効化
 6. ✅ データベースアカウントに強力なパスワードを使用
 
-## トラブルシューティング
-
-### 接続が拒否される
-
-- データベースサーバーが起動していることを確認
-- ホストとポートの設定を確認
-- ファイアウォールが接続を許可していることを確認
-- Sailの場合: `FORWARD_DB_PORT`が正しく設定されているか確認
-
-### 認証失敗
-
-- ユーザー名とパスワードを再確認
-- ユーザーに接続権限があることを確認
-- ホストベース認証が設定されているか確認
-
-### 権限不足
-
-- データベースユーザーに必要な権限があることを確認
-- 読み取り専用アクセスにはSELECT権限を付与
-- スキーマレベルの権限を確認
-
-### .envファイルが見つからない
-
-- 相対パスではなく絶対パスを使用
-- ファイルが存在し、読み取り可能であることを確認
-- ファイルの権限を確認
-
 ## 開発
 
 コントリビュートまたはカスタマイズしたい開発者向け：
 
-- 開発環境のセットアップは [DEVELOPMENT.md](./Documents/DEVELOPMENT.md) を参照
-- システム設計は [ARCHITECTURE.md](./Documents/ARCHITECTURE.md) を参照
-- 公開ガイドは [PUBLISHING.md](./Documents/PUBLISHING.md) を参照
-
-## 要件
-
-- Node.js 22.0.0以上
-- `.env`ファイルを持つLaravelプロジェクト（自動設定用）
-- データベース: MySQL 5.7+、PostgreSQL 12+、MariaDB 10.3+、SQLite 3+
+- 開発環境のセットアップは [DEVELOPMENT-ja.md](./Documents/DEVELOPMENT-ja.md) を参照
+- システム設計は [ARCHITECTURE-ja.md](./Documents/ARCHITECTURE-ja.md) を参照
+- 公開ガイドは [PUBLISHING-ja.md](./Documents/PUBLISHING-ja.md) を参照
 
 ## ライセンス
 
 MITライセンス - 詳細は [LICENSE](LICENSE) ファイルを参照
-
-## コントリビューション
-
-コントリビューションを歓迎します！お気軽にPull Requestを送信してください。
-
-## サポート
-
-- 📖 [ドキュメント](./Documents/)
-- 🐛 [問題を報告](https://github.com/kakehashi-inc/mcp-server-laravel-database/issues)
-- 💬 [ディスカッション](https://github.com/kakehashi-inc/mcp-server-laravel-database/discussions)
-
-## 関連プロジェクト
-
-- [Model Context Protocol](https://modelcontextprotocol.io/)
-- [MCP SDK](https://github.com/modelcontextprotocol/sdk)
-- [Laravel](https://laravel.com/)
-
----
-
-Laravel開発者のために ❤️ を込めて作成

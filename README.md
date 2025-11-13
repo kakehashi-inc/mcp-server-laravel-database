@@ -18,20 +18,12 @@ A Model Context Protocol (MCP) server that provides seamless database access for
 - 🔐 **SSH Tunneling**: Secure connections to remote databases
 - 📦 **Easy Integration**: Works with Claude Desktop and Cursor
 
-## Installation
-
-### Using npx (Recommended)
+## Usage
 
 No installation required! Use directly with npx:
 
 ```bash
 npx mcp-server-laravel-database --env /path/to/laravel/.env
-```
-
-### Global Installation
-
-```bash
-npm install -g mcp-server-laravel-database
 ```
 
 ## Quick Start
@@ -41,7 +33,7 @@ npm install -g mcp-server-laravel-database
 Point to your Laravel `.env` file:
 
 ```bash
-mcp-server-laravel-database --env /path/to/your/laravel/.env
+npx mcp-server-laravel-database --env /path/to/your/laravel/.env
 ```
 
 ### 2. With Claude Desktop
@@ -128,7 +120,7 @@ FORWARD_DB_PORT=13306    # Laravel Sail port (optional)
 ### MySQL Connection
 
 ```bash
-mcp-server-laravel-database \
+npx mcp-server-laravel-database \
   --db-connection mysql \
   --db-host localhost \
   --db-port 3306 \
@@ -141,7 +133,7 @@ mcp-server-laravel-database \
 ### PostgreSQL Connection
 
 ```bash
-mcp-server-laravel-database \
+npx mcp-server-laravel-database \
   --db-connection pgsql \
   --db-host localhost \
   --db-port 5432 \
@@ -154,7 +146,7 @@ mcp-server-laravel-database \
 ### SQLite Database
 
 ```bash
-mcp-server-laravel-database \
+npx mcp-server-laravel-database \
   --db-connection sqlite \
   --db-database /path/to/database.sqlite \
   --readonly
@@ -165,7 +157,7 @@ mcp-server-laravel-database \
 For Laravel Sail projects, just point to the `.env` file - the server will automatically detect and use `FORWARD_DB_PORT`:
 
 ```bash
-mcp-server-laravel-database --env /path/to/laravel/.env
+npx mcp-server-laravel-database --env /path/to/laravel/.env
 ```
 
 ### With SSH Tunnel
@@ -173,7 +165,7 @@ mcp-server-laravel-database --env /path/to/laravel/.env
 Connect to a remote database securely:
 
 ```bash
-mcp-server-laravel-database \
+npx mcp-server-laravel-database \
   --env /path/to/.env \
   --ssh-host remote.example.com \
   --ssh-user deploy \
@@ -238,33 +230,6 @@ This is **highly recommended** for production databases.
 5. ✅ Enable SSL/TLS for database connections when possible
 6. ✅ Use strong passwords for database accounts
 
-## Troubleshooting
-
-### Connection Refused
-
-- Verify database server is running
-- Check host and port settings
-- Ensure firewall allows connections
-- For Sail: verify `FORWARD_DB_PORT` is set correctly
-
-### Authentication Failed
-
-- Double-check username and password
-- Verify user has permission to connect
-- Check if host-based authentication is configured
-
-### Permission Denied
-
-- Ensure database user has necessary permissions
-- Grant SELECT permission for read-only access
-- Check schema-level permissions
-
-### .env File Not Found
-
-- Use absolute path, not relative path
-- Verify file exists and is readable
-- Check file permissions
-
 ## Development
 
 For developers who want to contribute or customize:
@@ -273,32 +238,6 @@ For developers who want to contribute or customize:
 - See [ARCHITECTURE.md](./Documents/ARCHITECTURE.md) for system design
 - See [PUBLISHING.md](./Documents/PUBLISHING.md) for publishing guide
 
-## Requirements
-
-- Node.js 22.0.0 or higher
-- Laravel project with `.env` file (for automatic configuration)
-- Database: MySQL 5.7+, PostgreSQL 12+, MariaDB 10.3+, or SQLite 3+
-
 ## License
 
 MIT License - see [LICENSE](LICENSE) file for details
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## Support
-
-- 📖 [Documentation](./Documents/)
-- 🐛 [Report Issues](https://github.com/kakehashi-inc/mcp-server-laravel-database/issues)
-- 💬 [Discussions](https://github.com/kakehashi-inc/mcp-server-laravel-database/discussions)
-
-## Related Projects
-
-- [Model Context Protocol](https://modelcontextprotocol.io/)
-- [MCP SDK](https://github.com/modelcontextprotocol/sdk)
-- [Laravel](https://laravel.com/)
-
----
-
-Made with ❤️ for Laravel developers

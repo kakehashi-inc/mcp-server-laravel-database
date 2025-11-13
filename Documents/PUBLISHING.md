@@ -200,7 +200,7 @@ Update package.json and publish a patch version:
 
 ```bash
 # Update description, keywords, etc.
-npm version patch
+yarn version patch
 yarn build
 npm publish
 ```
@@ -235,17 +235,17 @@ yarn build
 
 ### Version Already Exists
 
-You cannot republish the same version. Bump the version:
+Cannot republish the same version. Update the version:
 
 ```bash
-npm version patch
+yarn version patch
 ```
 
 ## Security
 
-- Never commit `.npmrc` with authentication tokens
+- Don't commit `.npmrc` with authentication tokens
 - Use npm automation tokens for CI/CD
-- Enable 2FA on your npm account
+- Enable 2FA on npm account
 - Regularly audit dependencies: `yarn audit`
 
 ## Support

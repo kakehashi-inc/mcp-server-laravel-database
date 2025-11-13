@@ -10,8 +10,8 @@
 
 新しいバージョンを公開する前に：
 
-1. ✅ すべてのテストが成功：`npm test`
-2. ✅ ビルドが成功：`npm run build`
+1. ✅ すべてのテストが成功：`yarn test`
+2. ✅ ビルドが成功：`yarn build`
 3. ✅ ドキュメントが最新
 4. ✅ CHANGELOG.mdが更新されている
 5. ✅ `package.json`のバージョン番号が更新されている
@@ -70,7 +70,7 @@ git tag -a v1.0.1 -m "Release v1.0.1"
 ### 5. プロジェクトのビルド
 
 ```bash
-npm run build
+yarn build
 ```
 
 `dist/`のビルド出力を確認：
@@ -146,13 +146,13 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
 
       - name: Install dependencies
-        run: npm install
+        run: yarn install
 
       - name: Run tests
-        run: npm test
+        run: yarn test
 
       - name: Build
-        run: npm run build
+        run: yarn build
 
       - name: Publish to npm
         run: npm publish
@@ -197,8 +197,8 @@ package.jsonを更新してパッチバージョンを公開：
 
 ```bash
 # description、keywordsなどを更新
-npm version patch
-npm run build
+yarn version patch
+yarn build
 npm publish
 ```
 
@@ -226,8 +226,8 @@ npm owner ls mcp-server-laravel-database
 
 ```bash
 rm -rf dist node_modules
-npm install
-npm run build
+yarn install
+yarn build
 ```
 
 ### バージョンが既に存在
@@ -235,7 +235,7 @@ npm run build
 同じバージョンを再公開することはできません。バージョンを更新：
 
 ```bash
-npm version patch
+yarn version patch
 ```
 
 ## セキュリティ
@@ -243,7 +243,7 @@ npm version patch
 - 認証トークンを含む`.npmrc`をコミットしない
 - CI/CD用にはnpm自動化トークンを使用
 - npmアカウントで2FAを有効化
-- 定期的に依存関係を監査：`npm audit`
+- 定期的に依存関係を監査：`yarn audit`
 
 ## サポート
 
