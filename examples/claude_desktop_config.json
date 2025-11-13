@@ -1,0 +1,75 @@
+{
+  "mcpServers": {
+    "laravel-database": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-server-laravel-database",
+        "--env",
+        "/path/to/your/laravel/.env",
+        "--readonly"
+      ]
+    },
+    "laravel-database-direct": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-server-laravel-database",
+        "--db-connection",
+        "mysql",
+        "--db-host",
+        "localhost",
+        "--db-port",
+        "3306",
+        "--db-database",
+        "laravel",
+        "--db-username",
+        "root",
+        "--db-password",
+        "password",
+        "--readonly"
+      ]
+    },
+    "laravel-database-sail": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-server-laravel-database",
+        "--env",
+        "/path/to/your/laravel/.env"
+      ]
+    },
+    "laravel-database-postgres": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-server-laravel-database",
+        "--db-connection",
+        "pgsql",
+        "--db-host",
+        "localhost",
+        "--db-port",
+        "5432",
+        "--db-database",
+        "laravel",
+        "--db-username",
+        "postgres",
+        "--db-password",
+        "password",
+        "--readonly"
+      ]
+    },
+    "laravel-database-sqlite": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-server-laravel-database",
+        "--db-connection",
+        "sqlite",
+        "--db-database",
+        "/path/to/database.sqlite",
+        "--readonly"
+      ]
+    }
+  }
+}

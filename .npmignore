@@ -1,0 +1,14 @@
+src/
+tests/
+examples/
+Documents/
+.git
+.gitignore
+*.log
+*.tgz
+node_modules/
+.DS_Store
+tsconfig.json
+vite.config.ts
+.yarnrc.yml
+yarn.lock
