@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "laravel-database": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-server-laravel-database",
+        "--env",
+        "/path/to/your/laravel/.env",
+        "--readonly"
+      ]
+    }
+  }
+}
