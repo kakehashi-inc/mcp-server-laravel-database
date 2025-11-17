@@ -1,6 +1,6 @@
-import { LaravelDatabaseServer } from './server.js';
-import { parseArguments, buildConfig } from './config.js';
-import { createLogger } from './utils/logger.js';
+import { LaravelDatabaseServer } from "./server.js";
+import { parseArguments, buildConfig } from "./config.js";
+import { createLogger } from "./utils/logger.js";
 
 async function main() {
   let server: LaravelDatabaseServer | null = null;
@@ -15,7 +15,7 @@ async function main() {
     // Create logger for startup
     const logger = createLogger(config.logLevel, config.id);
 
-    logger.info('Initializing Laravel Database MCP Server', {
+    logger.info("Initializing Laravel Database MCP Server", {
       database: config.database.type,
       readonly: config.readonly,
       transport: config.transport,
@@ -36,22 +36,25 @@ async function main() {
       process.exit(0);
     };
 
-    process.on('SIGINT', () => shutdown('SIGINT'));
-    process.on('SIGTERM', () => shutdown('SIGTERM'));
+    process.on("SIGINT", () => shutdown("SIGINT"));
+    process.on("SIGTERM", () => shutdown("SIGTERM"));
 
     // Handle uncaught errors
-    process.on('uncaughtException', (error) => {
-      logger.error('Uncaught exception', { error: error.message, stack: error.stack });
+    process.on("uncaughtException", (error) => {
+      logger.error("Uncaught exception", {
+        error: error.message,
+        stack: error.stack,
+      });
       process.exit(1);
     });
 
-    process.on('unhandledRejection', (reason) => {
-      logger.error('Unhandled rejection', { reason });
+    process.on("unhandledRejection", (reason) => {
+      logger.error("Unhandled rejection", { reason });
       process.exit(1);
     });
   } catch (error) {
-    const logger = createLogger('error');
-    logger.error('Failed to start server', { error });
+    const logger = createLogger("error");
+    logger.error("Failed to start server", { error });
 
     if (server) {
       await server.stop();
