@@ -213,5 +213,34 @@ describe('config', () => {
 
       unlinkSync(envPath);
     });
+
+    it('should apply priority environment < env file < CLI', () => {
+      const originalDbHost = process.env.DB_HOST;
+      process.env.DB_HOST = 'env-host';
+
+      const envPath = join(TEMP_DIR, `config-${Date.now()}-priority.env`);
+      writeFileSync(
+        envPath,
+        [
+          'DB_DATABASE=testdb',
+          'DB_HOST=file-host',
+          'DB_PORT=3306',
+        ].join('\n')
+      );
+
+      const configFromFileOnly = buildConfig({ env: envPath });
+      expect(configFromFileOnly.database.host).toBe('file-host');
+
+      const configWithCli = buildConfig({ env: envPath, 'db-host': 'cli-host' });
+      expect(configWithCli.database.host).toBe('cli-host');
+
+      unlinkSync(envPath);
+
+      if (originalDbHost === undefined) {
+        delete process.env.DB_HOST;
+      } else {
+        process.env.DB_HOST = originalDbHost;
+      }
+    });
   });
 });

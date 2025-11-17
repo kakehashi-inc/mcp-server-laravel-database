@@ -8,6 +8,7 @@ import {
   CLIArguments,
   TransportMode,
   LogLevel,
+  EnvConfig,
 } from './types/index.js';
 import { parseEnvFile, getEnvConfig } from './utils/env-parser.js';
 import { detectSailPort } from './utils/sail-detector.js';
@@ -113,47 +114,44 @@ export function parseArguments(): CLIArguments {
 }
 
 export function buildConfig(args: CLIArguments): ServerConfig {
-  const systemEnvConfig = getEnvConfig();
+  const processEnvConfig = getEnvConfig();
   const fileEnvConfig = args.env ? parseEnvFile(args.env) : undefined;
-  const mergedEnvConfig = {
-    ...systemEnvConfig,
+
+  // Apply priority: environment variables < .env file
+  const mergedEnvConfig: EnvConfig = {
+    ...processEnvConfig,
     ...(fileEnvConfig ?? {}),
   };
 
-  const readEnv = <K extends keyof typeof systemEnvConfig>(key: K): string | undefined => {
-    return fileEnvConfig?.[key] ?? systemEnvConfig[key];
-  };
+  const dbType = (args['db-connection'] ??
+    mergedEnvConfig.DB_CONNECTION ??
+    'mysql') as DatabaseType;
 
   const forwardPort = mergedEnvConfig.FORWARD_DB_PORT
     ? parseInt(mergedEnvConfig.FORWARD_DB_PORT, 10)
     : undefined;
 
-  // Priority: CLI args > .env file > environment variables
-  const dbType = (args['db-connection'] ||
-    readEnv('DB_CONNECTION') ||
-    'mysql') as DatabaseType;
-
-  // Detect Laravel Sail port
   const sailPort = detectSailPort(mergedEnvConfig);
-  const dbPort = args['db-port'] || sailPort || getDefaultPort(dbType);
+  const dbPort = args['db-port'] ?? sailPort ?? getDefaultPort(dbType);
+
   const usingForwardedPort =
-    forwardPort !== undefined && !Number.isNaN(forwardPort) && sailPort === forwardPort;
+    args['db-port'] === undefined &&
+    forwardPort !== undefined &&
+    !Number.isNaN(forwardPort) &&
+    sailPort === forwardPort;
 
   const dbHost =
-    args['db-host'] ||
-    (usingForwardedPort ? '127.0.0.1' : undefined) ||
-    readEnv('DB_HOST') ||
-    'localhost';
+    args['db-host'] ??
+    (usingForwardedPort ? '127.0.0.1' : mergedEnvConfig.DB_HOST ?? 'localhost');
 
-  const dbDatabase = args['db-database'] || readEnv('DB_DATABASE');
+  const dbDatabase = args['db-database'] ?? mergedEnvConfig.DB_DATABASE;
   if (!dbDatabase) {
     throw new Error('Database name is required (--db-database or DB_DATABASE)');
   }
 
-  const dbUsername = args['db-username'] || readEnv('DB_USERNAME');
-  const dbPassword = args['db-password'] || readEnv('DB_PASSWORD');
+  const dbUsername = args['db-username'] ?? mergedEnvConfig.DB_USERNAME;
+  const dbPassword = args['db-password'] ?? mergedEnvConfig.DB_PASSWORD;
 
-  // Database configuration
   const database: DatabaseConfig = {
     type: dbType,
     host: dbHost,
@@ -182,7 +180,7 @@ export function buildConfig(args: CLIArguments): ServerConfig {
     database,
     ssh,
     transport: (args.transport || 'stdio') as TransportMode,
-    port: args.port,
+    port: args.port || 3333,
     host: args.listen || 'localhost',
     readonly: args.readonly || false,
     maxRows: args['max-rows'],
