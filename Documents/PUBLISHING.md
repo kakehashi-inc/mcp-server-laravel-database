@@ -27,6 +27,41 @@ Follow Semantic Versioning (SemVer):
 
 ## Publishing Steps
 
+### Quick Command Reference
+
+For convenience, the following commands (shared with other published MCP projects) cover the typical release flow:
+
+#### 1. Version bump
+```bash
+npm version patch   # or minor / major
+```
+
+#### 2. Final build
+```bash
+npm run build
+```
+
+#### 3. Inspect package contents
+```bash
+npm pack --dry-run
+# or
+npm pack
+tar -tvf mcp-server-laravel-database-*.tgz
+rm mcp-server-laravel-database-*.tgz
+```
+
+#### 4. Publish to npm
+```bash
+npm whoami     # ensure you are logged in
+npm publish
+```
+
+#### 5. Verify on npm
+```bash
+npm view mcp-server-laravel-database
+npm view mcp-server-laravel-database version
+```
+
 ### 1. Update Version
 
 Update the version in `package.json`:

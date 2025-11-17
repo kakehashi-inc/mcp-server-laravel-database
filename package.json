@@ -6,7 +6,11 @@
   "bin": "./dist/index.js",
   "main": "./dist/index.js",
   "files": [
-    "dist"
+    "dist",
+    "README.md",
+    "README-ja.md",
+    "CHANGELOG.md",
+    "LICENSE"
   ],
   "scripts": {
     "build": "vite build",

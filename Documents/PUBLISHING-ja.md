@@ -27,6 +27,41 @@
 
 ## 公開手順
 
+### クイックコマンドリファレンス
+
+他プロジェクトの `Documents/release.md` と同じ内容を以下にまとめます。
+
+#### 1. バージョンアップ
+```bash
+npm version patch   # minor / major も同様
+```
+
+#### 2. 最終ビルド
+```bash
+npm run build
+```
+
+#### 3. パッケージ内容の確認
+```bash
+npm pack --dry-run
+# または
+npm pack
+tar -tvf mcp-server-laravel-database-*.tgz
+rm mcp-server-laravel-database-*.tgz
+```
+
+#### 4. 公開
+```bash
+npm whoami    # ログイン確認
+npm publish
+```
+
+#### 5. npmでの公開確認
+```bash
+npm view mcp-server-laravel-database
+npm view mcp-server-laravel-database version
+```
+
 ### 1. バージョンの更新
 
 `package.json`のバージョンを更新：
