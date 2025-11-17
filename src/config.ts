@@ -11,8 +11,6 @@ import {
 } from './types/index.js';
 import { parseEnvFile, getEnvConfig } from './utils/env-parser.js';
 import { detectSailPort } from './utils/sail-detector.js';
-import { parseSSLMode } from './utils/ssl-config.js';
-
 export function parseArguments(): CLIArguments {
   const argv = yargs(hideBin(process.argv))
     .option('env', {
@@ -47,7 +45,7 @@ export function parseArguments(): CLIArguments {
     .option('transport', {
       type: 'string',
       description: 'Transport mode',
-      choices: ['stdio', 'sse', 'http'],
+      choices: ['stdio', 'http'],
       default: 'stdio',
     })
     .option('port', {
@@ -115,30 +113,35 @@ export function parseArguments(): CLIArguments {
 }
 
 export function buildConfig(args: CLIArguments): ServerConfig {
-  // Parse .env file if specified
-  let envConfig = getEnvConfig();
-  if (args.env) {
-    envConfig = parseEnvFile(args.env);
-  }
+  const systemEnvConfig = getEnvConfig();
+  const fileEnvConfig = args.env ? parseEnvFile(args.env) : undefined;
+  const mergedEnvConfig = {
+    ...systemEnvConfig,
+    ...(fileEnvConfig ?? {}),
+  };
 
-  // Priority: CLI args > env variables > .env file
+  const readEnv = <K extends keyof typeof systemEnvConfig>(key: K): string | undefined => {
+    return fileEnvConfig?.[key] ?? systemEnvConfig[key];
+  };
+
+  // Priority: CLI args > .env file > environment variables
   const dbType = (args['db-connection'] ||
-    envConfig.DB_CONNECTION ||
+    readEnv('DB_CONNECTION') ||
     'mysql') as DatabaseType;
 
-  const dbHost = args['db-host'] || envConfig.DB_HOST || 'localhost';
+  const dbHost = args['db-host'] || readEnv('DB_HOST') || 'localhost';
 
   // Detect Laravel Sail port
-  const sailPort = detectSailPort(envConfig);
+  const sailPort = detectSailPort(mergedEnvConfig);
   const dbPort = args['db-port'] || sailPort || getDefaultPort(dbType);
 
-  const dbDatabase = args['db-database'] || envConfig.DB_DATABASE;
+  const dbDatabase = args['db-database'] || readEnv('DB_DATABASE');
   if (!dbDatabase) {
     throw new Error('Database name is required (--db-database or DB_DATABASE)');
   }
 
-  const dbUsername = args['db-username'] || envConfig.DB_USERNAME;
-  const dbPassword = args['db-password'] || envConfig.DB_PASSWORD;
+  const dbUsername = args['db-username'] || readEnv('DB_USERNAME');
+  const dbPassword = args['db-password'] || readEnv('DB_PASSWORD');
 
   // Database configuration
   const database: DatabaseConfig = {

@@ -47,7 +47,7 @@ export function createLogger(level: LogLevel = 'info', id?: string): winston.Log
     ),
     transports: [
       new transports.Console({
-        stderrLevels: ['error', 'warn'],
+        stderrLevels: ['error', 'warn', 'info', 'debug'],
       }),
     ],
   });

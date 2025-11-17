@@ -113,7 +113,40 @@ FORWARD_DB_PORT=13306    # Laravel Sail port (optional)
 | `--ssh-user` | SSH username | - |
 | `--ssh-password` | SSH password | - |
 | `--ssh-key` | SSH private key path | - |
+| `--transport` | Transport mode (stdio/http) | stdio |
+| `--host` | HTTP server host (http transport only) | localhost |
+| `--port` | HTTP server port (http transport only) | 8080 |
 | `--log-level` | Log level (error/warn/info/debug) | info |
+
+### Configuration Precedence
+
+1. Command-line options (highest priority)
+2. `.env` file specified via `--env`
+3. Actual environment variables available in the current shell session
+
+If you omit `--env`, the server still reads `DB_*` values (e.g., `DB_HOST`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD`, `FORWARD_DB_PORT`) directly from the environment. Providing `--env` overrides those values key-by-key while still allowing any remaining settings to fall back to the environment.
+
+### Environment Variables
+
+When no CLI flag is provided, the following environment variables are consulted:
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `DB_CONNECTION` | Database type (`mysql`, `pgsql`, `mariadb`, `sqlite`) | `mysql` |
+| `DB_HOST` | Database host | `localhost` |
+| `DB_PORT` | Database port (use `.env` for Laravel Sail's `FORWARD_DB_PORT`) | Based on `DB_CONNECTION` (3306/5432/0) |
+| `DB_DATABASE` | Database name (required) | - |
+| `DB_USERNAME` | Database username | - |
+| `DB_PASSWORD` | Database password | - |
+
+Environment values are merged with `.env` contents (when provided) so that any keys missing from the file can still be picked up from the shell environment.
+
+### Transport Modes
+
+- **stdio** (default): Best for CLI-based clients like Claude Desktop or Cursor. The server emits all log lines to `stderr` so stdout stays reserved for MCP frames. No additional configuration is required.
+- **http**: Implements the MCP Streamable HTTP transport (`2024-11-05`). All operations use the `/mcp` endpoint (POST for requests, GET for SSE streaming responses, DELETE to end the session) with the `Mcp-Session-Id` header. Session IDs are generated server-side.
+
+Use `--host` and `--port` to choose the bind address for the HTTP listener when using the `http` transport.
 
 ## Usage Examples
 

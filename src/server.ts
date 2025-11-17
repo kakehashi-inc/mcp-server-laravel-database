@@ -1,17 +1,21 @@
-import { Server } from '@modelcontextprotocol/sdk/server/index.js';
+import http, { IncomingMessage, ServerResponse } from 'node:http';
+import { randomUUID } from 'node:crypto';
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import {
   CallToolRequestSchema,
   ListResourcesRequestSchema,
   ListToolsRequestSchema,
   ReadResourceRequestSchema,
+  isInitializeRequest,
 } from '@modelcontextprotocol/sdk/types.js';
 import { BaseConnector } from './connectors/base.js';
 import { MySQLConnector } from './connectors/mysql.js';
 import { PostgresConnector } from './connectors/postgres.js';
 import { MariaDBConnector } from './connectors/mariadb.js';
 import { SQLiteConnector } from './connectors/sqlite.js';
-import { ServerConfig } from './types/index.js';
+import { ServerConfig, TransportMode } from './types/index.js';
 import { createLogger } from './utils/logger.js';
 import { createSSHTunnel, SSHTunnel } from './utils/ssh-tunnel.js';
 import {
@@ -25,18 +29,25 @@ import {
 import { executeSql } from './tools/index.js';
 import { RESOURCE_TEMPLATES } from './types/mcp.js';
 
+const STREAMABLE_ENDPOINT = '/mcp';
+
 export class LaravelDatabaseServer {
-  private server: Server;
+  private server: McpServer['server'];
+  private mcpServer: McpServer;
   private connector: BaseConnector | null = null;
   private sshTunnel: SSHTunnel | null = null;
   private config: ServerConfig;
   private logger;
+  private httpServer: http.Server | null = null;
+  private currentTransport: TransportMode | null = null;
+  private streamableTransport: StreamableHTTPServerTransport | null = null;
+  private streamableSessionId: string | null = null;
 
   constructor(config: ServerConfig) {
     this.config = config;
     this.logger = createLogger(config.logLevel, config.id);
 
-    this.server = new Server(
+    this.mcpServer = new McpServer(
       {
         name: 'mcp-server-laravel-database',
         version: '1.0.0',
@@ -48,6 +59,8 @@ export class LaravelDatabaseServer {
         },
       }
     );
+
+    this.server = this.mcpServer.server;
 
     this.setupHandlers();
   }
@@ -301,11 +314,26 @@ export class LaravelDatabaseServer {
       await this.connector.connect();
       this.logger.info('Database connection established');
 
-      // Start MCP server
-      const transport = new StdioServerTransport();
-      await this.server.connect(transport);
+      switch (this.config.transport) {
+        case 'stdio':
+          await this.startStdioTransport();
+          break;
+        case 'http':
+          await this.startStreamableHttpServer();
+          break;
+        default:
+          throw new Error(`Unsupported transport mode: ${this.config.transport}`);
+      }
 
-      this.logger.info('MCP Server started successfully');
+      const transportInfo =
+        this.config.transport === 'stdio'
+          ? { transport: this.config.transport }
+          : {
+              transport: this.config.transport,
+              endpoint: `http://${this.getHttpHost()}:${this.getHttpPort()}${STREAMABLE_ENDPOINT}`,
+            };
+
+      this.logger.info('MCP Server started successfully', transportInfo);
     } catch (error) {
       this.logger.error('Failed to start server', { error });
       throw error;
@@ -314,6 +342,15 @@ export class LaravelDatabaseServer {
 
   async stop(): Promise<void> {
     this.logger.info('Stopping server');
+
+    if (this.httpServer) {
+      await this.shutdownHttpServer();
+    }
+
+    await this.mcpServer.close();
+    this.currentTransport = null;
+    this.streamableTransport = null;
+    this.streamableSessionId = null;
 
     if (this.connector) {
       await this.connector.disconnect();
@@ -325,8 +362,265 @@ export class LaravelDatabaseServer {
       this.sshTunnel = null;
     }
 
-    await this.server.close();
     this.logger.info('Server stopped');
+  }
+
+  private async startStdioTransport(): Promise<void> {
+    const transport = new StdioServerTransport();
+
+    transport.onclose = () => {
+      this.logger.info('STDIO transport closed');
+      if (this.currentTransport === 'stdio') {
+        this.currentTransport = null;
+      }
+    };
+
+    transport.onerror = (error) => {
+      this.logger.error('STDIO transport error', { error: error.message });
+    };
+
+    await this.mcpServer.connect(transport);
+    this.currentTransport = 'stdio';
+  }
+
+  private async startStreamableHttpServer(): Promise<void> {
+    await this.startHttpListener((req, res) => this.handleStreamableHttpRequest(req, res));
+
+    this.logger.info('Listening for Streamable HTTP transport', {
+      host: this.getHttpHost(),
+      port: this.getHttpPort(),
+      endpoint: STREAMABLE_ENDPOINT,
+    });
+  }
+
+  private async startHttpListener(
+    handler: (req: IncomingMessage, res: ServerResponse) => Promise<void>
+  ): Promise<void> {
+    if (this.httpServer) {
+      throw new Error('HTTP listener already initialized');
+    }
+
+    this.httpServer = http.createServer((req, res) => {
+      handler(req, res).catch((error) => {
+        this.logger.error('HTTP transport handler error', {
+          error: error instanceof Error ? error.message : String(error),
+        });
+
+        if (!res.headersSent) {
+          res.writeHead(500).end('Internal Server Error');
+        }
+      });
+    });
+
+    await new Promise<void>((resolve, reject) => {
+      this.httpServer?.listen(this.getHttpPort(), this.getHttpHost(), (err?: Error) => {
+        if (err) {
+          this.httpServer?.close(() => undefined);
+          this.httpServer = null;
+          reject(err);
+        } else {
+          resolve();
+        }
+      });
+    });
+  }
+
+  private async handleStreamableHttpRequest(req: IncomingMessage, res: ServerResponse): Promise<void> {
+    if (!req.url) {
+      this.sendJsonRpcError(res, 404, -32004, 'Not Found');
+      return;
+    }
+
+    const requestUrl = new URL(req.url, `http://${this.getHttpHost()}:${this.getHttpPort()}`);
+
+    if (requestUrl.pathname !== STREAMABLE_ENDPOINT) {
+      this.sendJsonRpcError(res, 404, -32004, 'Not Found');
+      return;
+    }
+
+    switch (req.method) {
+      case 'POST':
+        await this.handleStreamablePost(req, res);
+        return;
+      case 'GET':
+        await this.handleStreamableGet(req, res);
+        return;
+      case 'DELETE':
+        await this.handleStreamableDelete(req, res);
+        return;
+      default:
+        this.sendJsonRpcError(res, 405, -32000, 'Method Not Allowed');
+    }
+  }
+
+  private async handleStreamablePost(req: IncomingMessage, res: ServerResponse): Promise<void> {
+    let body: unknown;
+
+    try {
+      body = await this.readJsonBody(req);
+    } catch (error) {
+      this.logger.warn('Invalid JSON body received for Streamable HTTP POST', {
+        error: error instanceof Error ? error.message : String(error),
+      });
+      this.sendJsonRpcError(res, 400, -32700, 'Invalid JSON body');
+      return;
+    }
+
+    const sessionId = this.getSessionIdHeader(req);
+
+    if (sessionId) {
+      if (!this.streamableTransport || sessionId !== this.streamableSessionId) {
+        this.sendJsonRpcError(res, 404, -32004, 'Session not found');
+        return;
+      }
+
+      await this.streamableTransport.handleRequest(req, res, body);
+      return;
+    }
+
+    if (this.currentTransport) {
+      this.sendJsonRpcError(res, 409, -32000, 'An MCP session is already active');
+      return;
+    }
+
+    if (!body || typeof body !== 'object' || !isInitializeRequest(body)) {
+      this.sendJsonRpcError(res, 400, -32600, 'Initialization request required');
+      return;
+    }
+
+    const transport = this.createStreamableTransport();
+    this.streamableTransport = transport;
+    this.currentTransport = 'http';
+
+    try {
+      await this.mcpServer.connect(transport);
+      await transport.handleRequest(req, res, body);
+    } catch (error) {
+      await transport.close().catch(() => undefined);
+      this.cleanupStreamableSession();
+      this.logger.error('Failed to establish Streamable HTTP session', { error });
+      throw error;
+    }
+  }
+
+  private async handleStreamableGet(req: IncomingMessage, res: ServerResponse): Promise<void> {
+    const sessionId = this.getSessionIdHeader(req);
+
+    if (!sessionId || !this.streamableTransport || sessionId !== this.streamableSessionId) {
+      this.sendJsonRpcError(res, 404, -32004, 'Session not found');
+      return;
+    }
+
+    await this.streamableTransport.handleRequest(req, res);
+  }
+
+  private async handleStreamableDelete(req: IncomingMessage, res: ServerResponse): Promise<void> {
+    const sessionId = this.getSessionIdHeader(req);
+
+    if (!sessionId || !this.streamableTransport || sessionId !== this.streamableSessionId) {
+      this.sendJsonRpcError(res, 404, -32004, 'Session not found');
+      return;
+    }
+
+    await this.streamableTransport.handleRequest(req, res);
+  }
+
+  private createStreamableTransport(): StreamableHTTPServerTransport {
+    const transport = new StreamableHTTPServerTransport({
+      sessionIdGenerator: () => randomUUID(),
+      onsessioninitialized: (sessionId: string) => {
+        this.streamableSessionId = sessionId;
+        this.logger.info('Streamable HTTP session initialized', { sessionId });
+      },
+      onsessionclosed: (sessionId: string) => {
+        this.logger.info('Streamable HTTP session closed by client', { sessionId });
+        this.cleanupStreamableSession();
+      },
+    });
+
+    transport.onclose = () => {
+      this.logger.info('Streamable HTTP transport closed');
+      this.cleanupStreamableSession();
+    };
+
+    transport.onerror = (error) => {
+      this.logger.error('Streamable HTTP transport error', { error: error.message });
+    };
+
+    return transport;
+  }
+
+  private async readJsonBody(req: IncomingMessage): Promise<unknown> {
+    const chunks: Uint8Array[] = [];
+
+    for await (const chunk of req) {
+      chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk);
+    }
+
+    const rawBody = Buffer.concat(chunks).toString('utf-8').trim();
+
+    if (!rawBody) {
+      return undefined;
+    }
+
+    return JSON.parse(rawBody);
+  }
+
+  private sendJsonResponse(res: ServerResponse, status: number, payload: unknown): void {
+    res.writeHead(status, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(payload));
+  }
+
+  private sendJsonRpcError(res: ServerResponse, status: number, code: number, message: string): void {
+    this.sendJsonResponse(res, status, {
+      jsonrpc: '2.0',
+      error: { code, message },
+      id: null,
+    });
+  }
+
+  private getSessionIdHeader(req: IncomingMessage): string | undefined {
+    const header = req.headers['mcp-session-id'];
+
+    if (Array.isArray(header)) {
+      return header[0];
+    }
+
+    return header;
+  }
+
+  private getHttpHost(): string {
+    return this.config.host ?? 'localhost';
+  }
+
+  private getHttpPort(): number {
+    return this.config.port ?? 8080;
+  }
+
+  private cleanupStreamableSession(): void {
+    if (this.currentTransport === 'http') {
+      this.currentTransport = null;
+    }
+    this.streamableTransport = null;
+    this.streamableSessionId = null;
+  }
+
+  private async shutdownHttpServer(): Promise<void> {
+    if (!this.httpServer) {
+      return;
+    }
+
+    await new Promise<void>((resolve, reject) => {
+      this.httpServer?.close((err) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve();
+        }
+      });
+    });
+
+    this.httpServer = null;
   }
 
   private createConnector(): BaseConnector {

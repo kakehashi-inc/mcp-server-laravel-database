@@ -9,7 +9,7 @@ The MCP Server for Laravel Database follows a modular architecture with clear se
 │                    MCP Client                            │
 │              (Claude Desktop / Cursor)                   │
 └────────────────────┬────────────────────────────────────┘
-                     │ MCP Protocol (stdio/http/sse)
+                     │ MCP Protocol (stdio/http)
                      │
 ┌────────────────────▼────────────────────────────────────┐
 │              MCP Server (server.ts)                      │
@@ -66,8 +66,8 @@ The MCP Server for Laravel Database follows a modular architecture with clear se
 
 **Configuration Priority:**
 1. Command-line arguments (highest)
-2. Environment variables
-3. .env file values (lowest)
+2. `.env` file values (when provided via `--env`)
+3. Environment variables
 
 ### 3. MCP Server (`server.ts`)
 
@@ -177,11 +177,6 @@ Implements MCP Tools for database operations:
 - Creates SSH tunnels for remote databases
 - Manages tunnel lifecycle
 - Forwards database connections
-
-#### ssl-config.ts
-- Configures SSL for database connections
-- Database-specific defaults
-- Multiple SSL modes
 
 ## Data Flow
 

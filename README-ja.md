@@ -113,7 +113,40 @@ FORWARD_DB_PORT=13306    # Laravel Sailポート（オプション）
 | `--ssh-user` | SSHユーザー名 | - |
 | `--ssh-password` | SSHパスワード | - |
 | `--ssh-key` | SSH秘密鍵パス | - |
+| `--transport` | トランスポートモード (stdio/http) | stdio |
+| `--host` | HTTPモード用のサーバーホスト | localhost |
+| `--port` | HTTPモード用のサーバーポート | 8080 |
 | `--log-level` | ログレベル (error/warn/info/debug) | info |
+
+### 設定の優先順位
+
+1. 起動オプション（最優先）
+2. `--env` で指定した `.env` ファイル
+3. 実行時の環境変数（`DB_*` や `FORWARD_DB_PORT` など）
+
+`--env` を省略した場合でも、現在のシェルに設定された環境変数が自動的に使用されます。`.env` ファイルを指定すると、そのキーのみが環境変数よりも優先され、その他の値は引き続き環境変数から補完されます。
+
+### 環境変数一覧
+
+CLI で明示しない場合、以下の環境変数が参照されます。
+
+| 変数名 | 説明 | デフォルト |
+|--------|------|------------|
+| `DB_CONNECTION` | データベース種別 (`mysql`/`pgsql`/`mariadb`/`sqlite`) | `mysql` |
+| `DB_HOST` | データベースホスト | `localhost` |
+| `DB_PORT` | データベースポート（Laravel Sail の `FORWARD_DB_PORT` は .env 側で指定） | `DB_CONNECTION` に応じたデフォルト (3306/5432/0) |
+| `DB_DATABASE` | データベース名（必須） | - |
+| `DB_USERNAME` | データベースユーザー名 | - |
+| `DB_PASSWORD` | データベースパスワード | - |
+
+`.env` の値と環境変数はマージされるため、`.env` に存在しないキーは環境変数で自動補完されます。
+
+### トランスポートモード
+
+- **stdio**（デフォルト）: Claude Desktop や Cursor などのCLIクライアント向け。ログはすべて `stderr` に出力され、`stdout` はMCPフレーム専用になります。
+- **http**: MCP Streamable HTTP規格 (`2024-11-05`) に準拠し、`/mcp` をPOST/GET/DELETEで共有します。`Mcp-Session-Id` ヘッダーでセッションを識別し、サーバー側でセッションIDを生成します。
+
+`http` を使用する場合は `--host` / `--port` で待ち受けアドレスを指定できます。
 
 ## 使用例
 

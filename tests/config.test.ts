@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { parseArguments, buildConfig } from '../src/config.js';
+import { mkdirSync, writeFileSync, unlinkSync } from 'fs';
+import { join } from 'path';
+
+const TEMP_DIR = join(process.cwd(), 'tests', '.tmp', 'config');
+mkdirSync(TEMP_DIR, { recursive: true });
 
 describe('config', () => {
   describe('buildConfig', () => {
@@ -116,6 +121,57 @@ describe('config', () => {
       expect(config.transport).toBe('http');
       expect(config.port).toBe(9000);
       expect(config.host).toBe('0.0.0.0');
+    });
+
+    it('should prioritize env file over environment variables', () => {
+      const originalDbDatabase = process.env.DB_DATABASE;
+      process.env.DB_DATABASE = 'env-db';
+
+      const envPath = join(TEMP_DIR, `config-${Date.now()}-file.env`);
+      writeFileSync(envPath, 'DB_DATABASE=file-db\n');
+
+      const config = buildConfig({ env: envPath });
+      expect(config.database.database).toBe('file-db');
+
+      unlinkSync(envPath);
+      if (originalDbDatabase === undefined) {
+        delete process.env.DB_DATABASE;
+      } else {
+        process.env.DB_DATABASE = originalDbDatabase;
+      }
+    });
+
+    it('should fall back to environment variables when env file lacks keys', () => {
+      const originalDbDatabase = process.env.DB_DATABASE;
+      process.env.DB_DATABASE = 'env-db';
+
+      const envPath = join(TEMP_DIR, `config-${Date.now()}-partial.env`);
+      writeFileSync(envPath, 'DB_HOST=file-host\n');
+
+      const config = buildConfig({ env: envPath });
+      expect(config.database.database).toBe('env-db');
+      expect(config.database.host).toBe('file-host');
+
+      unlinkSync(envPath);
+      if (originalDbDatabase === undefined) {
+        delete process.env.DB_DATABASE;
+      } else {
+        process.env.DB_DATABASE = originalDbDatabase;
+      }
+    });
+
+    it('should read values from environment variables when no env file is provided', () => {
+      const originalDbDatabase = process.env.DB_DATABASE;
+      process.env.DB_DATABASE = 'env-db';
+
+      const config = buildConfig({});
+      expect(config.database.database).toBe('env-db');
+
+      if (originalDbDatabase === undefined) {
+        delete process.env.DB_DATABASE;
+      } else {
+        process.env.DB_DATABASE = originalDbDatabase;
+      }
     });
   });
 });

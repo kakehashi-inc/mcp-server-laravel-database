@@ -1,6 +1,6 @@
 import { DatabaseConfig, SSHConfig } from './database.js';
 
-export type TransportMode = 'stdio' | 'sse' | 'http';
+export type TransportMode = 'stdio' | 'http';
 export type LogLevel = 'error' | 'warn' | 'info' | 'debug';
 
 export interface ServerConfig {

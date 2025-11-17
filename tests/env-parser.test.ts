@@ -1,12 +1,15 @@
 import { describe, it, expect } from 'vitest';
 import { parseEnvFile, getEnvConfig } from '../src/utils/env-parser.js';
-import { writeFileSync, unlinkSync } from 'fs';
+import { mkdirSync, writeFileSync, unlinkSync } from 'fs';
 import { join } from 'path';
+
+const TEMP_DIR = join(process.cwd(), 'tests', '.tmp', 'env-parser');
+mkdirSync(TEMP_DIR, { recursive: true });
 
 describe('env-parser', () => {
   describe('parseEnvFile', () => {
     it('should parse basic .env file', () => {
-      const testFile = join('/tmp', `test-${Date.now()}.env`);
+      const testFile = join(TEMP_DIR, `test-${Date.now()}.env`);
       const envContent = `
 DB_CONNECTION=mysql
 DB_HOST=localhost
@@ -30,7 +33,7 @@ DB_PASSWORD=secret
     });
 
     it('should handle quoted values', () => {
-      const testFile = join('/tmp', `test-${Date.now()}.env`);
+      const testFile = join(TEMP_DIR, `test-${Date.now()}.env`);
       const envContent = `
 DB_CONNECTION="mysql"
 DB_HOST='localhost'
@@ -48,7 +51,7 @@ DB_PASSWORD="secret with spaces"
     });
 
     it('should skip comments and empty lines', () => {
-      const testFile = join('/tmp', `test-${Date.now()}.env`);
+      const testFile = join(TEMP_DIR, `test-${Date.now()}.env`);
       const envContent = `
 # This is a comment
 DB_CONNECTION=mysql
@@ -67,7 +70,7 @@ DB_HOST=localhost
     });
 
     it('should only parse DB-related variables', () => {
-      const testFile = join('/tmp', `test-${Date.now()}.env`);
+      const testFile = join(TEMP_DIR, `test-${Date.now()}.env`);
       const envContent = `
 APP_NAME=Laravel
 DB_CONNECTION=mysql
@@ -87,7 +90,7 @@ DB_HOST=localhost
     });
 
     it('should handle FORWARD_DB_PORT for Laravel Sail', () => {
-      const testFile = join('/tmp', `test-${Date.now()}.env`);
+      const testFile = join(TEMP_DIR, `test-${Date.now()}.env`);
       const envContent = `
 DB_PORT=3306
 FORWARD_DB_PORT=13306

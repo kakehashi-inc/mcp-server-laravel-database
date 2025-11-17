@@ -113,7 +113,6 @@ mcp-server-laravel-database/
 │   │   ├── sail-detector.ts  # Laravel Sail検出
 │   │   ├── query-validator.ts # 読み取り専用クエリ検証
 │   │   ├── pagination.ts     # ページネーションユーティリティ
-│   │   ├── ssl-config.ts     # SSL設定
 │   │   ├── ssh-tunnel.ts     # SSHトンネルサポート
 │   │   └── dsn-builder.ts    # DSNビルダー
 │   └── types/                # TypeScript型定義

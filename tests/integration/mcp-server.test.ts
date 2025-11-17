@@ -1,11 +1,15 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { LaravelDatabaseServer } from '../../src/server.js';
 import { ServerConfig } from '../../src/types/index.js';
-import { writeFileSync, unlinkSync, existsSync } from 'fs';
+import { unlinkSync, existsSync, mkdirSync } from 'fs';
+import { join } from 'path';
+
+const TEMP_DIR = join(process.cwd(), 'tests', '.tmp', 'integration');
+mkdirSync(TEMP_DIR, { recursive: true });
 
 // Integration test using SQLite (no external dependencies required)
 describe('MCP Server Integration', () => {
-  const testDbPath = '/tmp/test-mcp-server.sqlite';
+  const testDbPath = join(TEMP_DIR, 'test-mcp-server.sqlite');
   let server: LaravelDatabaseServer | null = null;
 
   beforeAll(async () => {
@@ -93,7 +97,7 @@ describe('MCP Server Integration', () => {
 });
 
 describe('Read-Only Mode', () => {
-  const testDbPath = '/tmp/test-readonly.sqlite';
+  const testDbPath = join(TEMP_DIR, 'test-readonly.sqlite');
 
   beforeAll(async () => {
     const Database = (await import('better-sqlite3')).default;
