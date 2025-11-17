@@ -113,7 +113,7 @@ describe('config', () => {
         'db-database': 'testdb',
         transport: 'http' as const,
         port: 9000,
-        host: '0.0.0.0',
+        listen: '0.0.0.0',
       };
 
       const config = buildConfig(args);
@@ -172,6 +172,46 @@ describe('config', () => {
       } else {
         process.env.DB_DATABASE = originalDbDatabase;
       }
+    });
+
+    it('should use forwarded Sail port and localhost host when FORWARD_DB_PORT is set', () => {
+      const envPath = join(TEMP_DIR, `config-${Date.now()}-forward.env`);
+      writeFileSync(
+        envPath,
+        [
+          'DB_DATABASE=testdb',
+          'DB_HOST=event-mysql',
+          'DB_PORT=3306',
+          'FORWARD_DB_PORT=13306',
+        ].join('\n')
+      );
+
+      const config = buildConfig({ env: envPath });
+
+      expect(config.database.port).toBe(13306);
+      expect(config.database.host).toBe('127.0.0.1');
+
+      unlinkSync(envPath);
+    });
+
+    it('should respect CLI host even when FORWARD_DB_PORT is present', () => {
+      const envPath = join(TEMP_DIR, `config-${Date.now()}-forward-cli.env`);
+      writeFileSync(
+        envPath,
+        [
+          'DB_DATABASE=testdb',
+          'DB_HOST=event-mysql',
+          'DB_PORT=3306',
+          'FORWARD_DB_PORT=13306',
+        ].join('\n')
+      );
+
+      const config = buildConfig({ env: envPath, 'db-host': 'custom-host' });
+
+      expect(config.database.port).toBe(13306);
+      expect(config.database.host).toBe('custom-host');
+
+      unlinkSync(envPath);
     });
   });
 });

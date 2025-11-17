@@ -51,11 +51,11 @@ export function parseArguments(): CLIArguments {
     .option('port', {
       type: 'number',
       description: 'HTTP server port',
-      default: 8080,
+      default: 3333,
     })
-    .option('host', {
+    .option('listen', {
       type: 'string',
-      description: 'HTTP server host',
+      description: 'HTTP server listen address',
       default: 'localhost',
     })
     .option('readonly', {
@@ -124,16 +124,26 @@ export function buildConfig(args: CLIArguments): ServerConfig {
     return fileEnvConfig?.[key] ?? systemEnvConfig[key];
   };
 
+  const forwardPort = mergedEnvConfig.FORWARD_DB_PORT
+    ? parseInt(mergedEnvConfig.FORWARD_DB_PORT, 10)
+    : undefined;
+
   // Priority: CLI args > .env file > environment variables
   const dbType = (args['db-connection'] ||
     readEnv('DB_CONNECTION') ||
     'mysql') as DatabaseType;
 
-  const dbHost = args['db-host'] || readEnv('DB_HOST') || 'localhost';
-
   // Detect Laravel Sail port
   const sailPort = detectSailPort(mergedEnvConfig);
   const dbPort = args['db-port'] || sailPort || getDefaultPort(dbType);
+  const usingForwardedPort =
+    forwardPort !== undefined && !Number.isNaN(forwardPort) && sailPort === forwardPort;
+
+  const dbHost =
+    args['db-host'] ||
+    (usingForwardedPort ? '127.0.0.1' : undefined) ||
+    readEnv('DB_HOST') ||
+    'localhost';
 
   const dbDatabase = args['db-database'] || readEnv('DB_DATABASE');
   if (!dbDatabase) {
@@ -173,7 +183,7 @@ export function buildConfig(args: CLIArguments): ServerConfig {
     ssh,
     transport: (args.transport || 'stdio') as TransportMode,
     port: args.port,
-    host: args.host,
+    host: args.listen || 'localhost',
     readonly: args.readonly || false,
     maxRows: args['max-rows'],
     id: args.id,

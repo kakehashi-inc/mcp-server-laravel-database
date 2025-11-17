@@ -114,8 +114,8 @@ FORWARD_DB_PORT=13306    # Laravel Sailポート（オプション）
 | `--ssh-password` | SSHパスワード | - |
 | `--ssh-key` | SSH秘密鍵パス | - |
 | `--transport` | トランスポートモード (stdio/http) | stdio |
-| `--host` | HTTPモード用のサーバーホスト | localhost |
-| `--port` | HTTPモード用のサーバーポート | 8080 |
+| `--listen` | HTTPモード用の待受アドレス | `localhost` |
+| `--port` | HTTPモード用のサーバーポート | 3333 |
 | `--log-level` | ログレベル (error/warn/info/debug) | info |
 
 ### 設定の優先順位
@@ -133,7 +133,7 @@ CLI で明示しない場合、以下の環境変数が参照されます。
 | 変数名 | 説明 | デフォルト |
 |--------|------|------------|
 | `DB_CONNECTION` | データベース種別 (`mysql`/`pgsql`/`mariadb`/`sqlite`) | `mysql` |
-| `DB_HOST` | データベースホスト | `localhost` |
+| `DB_HOST` | データベースホスト（`FORWARD_DB_PORT` が有効な場合は `127.0.0.1` に自動置換） | `localhost` |
 | `DB_PORT` | データベースポート（Laravel Sail の `FORWARD_DB_PORT` は .env 側で指定） | `DB_CONNECTION` に応じたデフォルト (3306/5432/0) |
 | `DB_DATABASE` | データベース名（必須） | - |
 | `DB_USERNAME` | データベースユーザー名 | - |
@@ -146,7 +146,7 @@ CLI で明示しない場合、以下の環境変数が参照されます。
 - **stdio**（デフォルト）: Claude Desktop や Cursor などのCLIクライアント向け。ログはすべて `stderr` に出力され、`stdout` はMCPフレーム専用になります。
 - **http**: MCP Streamable HTTP規格 (`2024-11-05`) に準拠し、`/mcp` をPOST/GET/DELETEで共有します。`Mcp-Session-Id` ヘッダーでセッションを識別し、サーバー側でセッションIDを生成します。
 
-`http` を使用する場合は `--host` / `--port` で待ち受けアドレスを指定できます。
+`http` を使用する場合は `--listen` で待受アドレスを指定できます。デフォルトでは `localhost` の 3333 番ポートを使用するため、Laravel Web サーバーと競合しません。
 
 ## 使用例
 

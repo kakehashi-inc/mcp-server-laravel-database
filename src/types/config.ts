@@ -39,7 +39,7 @@ export interface CLIArguments {
   // Transport parameters
   transport?: TransportMode;
   port?: number;
-  host?: string;
+  listen?: string;
 
   // Security parameters
   readonly?: boolean;

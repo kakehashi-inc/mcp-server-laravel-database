@@ -594,7 +594,7 @@ export class LaravelDatabaseServer {
   }
 
   private getHttpPort(): number {
-    return this.config.port ?? 8080;
+    return this.config.port ?? 3333;
   }
 
   private cleanupStreamableSession(): void {

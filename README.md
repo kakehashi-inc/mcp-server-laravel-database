@@ -114,8 +114,8 @@ FORWARD_DB_PORT=13306    # Laravel Sail port (optional)
 | `--ssh-password` | SSH password | - |
 | `--ssh-key` | SSH private key path | - |
 | `--transport` | Transport mode (stdio/http) | stdio |
-| `--host` | HTTP server host (http transport only) | localhost |
-| `--port` | HTTP server port (http transport only) | 8080 |
+| `--listen` | HTTP server listen address (http transport only) | `localhost` |
+| `--port` | HTTP server port (http transport only) | 3333 |
 | `--log-level` | Log level (error/warn/info/debug) | info |
 
 ### Configuration Precedence
@@ -133,7 +133,7 @@ When no CLI flag is provided, the following environment variables are consulted:
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `DB_CONNECTION` | Database type (`mysql`, `pgsql`, `mariadb`, `sqlite`) | `mysql` |
-| `DB_HOST` | Database host | `localhost` |
+| `DB_HOST` | Database host (overridden to `127.0.0.1` when `FORWARD_DB_PORT` is used) | `localhost` |
 | `DB_PORT` | Database port (use `.env` for Laravel Sail's `FORWARD_DB_PORT`) | Based on `DB_CONNECTION` (3306/5432/0) |
 | `DB_DATABASE` | Database name (required) | - |
 | `DB_USERNAME` | Database username | - |
@@ -146,7 +146,7 @@ Environment values are merged with `.env` contents (when provided) so that any k
 - **stdio** (default): Best for CLI-based clients like Claude Desktop or Cursor. The server emits all log lines to `stderr` so stdout stays reserved for MCP frames. No additional configuration is required.
 - **http**: Implements the MCP Streamable HTTP transport (`2024-11-05`). All operations use the `/mcp` endpoint (POST for requests, GET for SSE streaming responses, DELETE to end the session) with the `Mcp-Session-Id` header. Session IDs are generated server-side.
 
-Use `--host` and `--port` to choose the bind address for the HTTP listener when using the `http` transport.
+Use `--listen` to choose the bind address for the HTTP listener when using the `http` transport. By default the server binds to `localhost` and port `3333`, which avoids typical Laravel web ports.
 
 ## Usage Examples
 
