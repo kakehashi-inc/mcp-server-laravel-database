@@ -1,74 +1,74 @@
 import mariadb from 'mariadb';
 import { BaseConnector } from './base.js';
 import {
-  DatabaseConfig,
-  QueryResult,
-  SchemaInfo,
-  TableInfo,
-  ColumnInfo,
-  IndexInfo,
-  ProcedureInfo,
+    DatabaseConfig,
+    QueryResult,
+    SchemaInfo,
+    TableInfo,
+    ColumnInfo,
+    IndexInfo,
+    ProcedureInfo,
 } from '../types/index.js';
 
 export class MariaDBConnector extends BaseConnector {
-  private connection: mariadb.Connection | null = null;
+    private connection: mariadb.Connection | null = null;
 
-  async connect(): Promise<void> {
-    this.connection = await mariadb.createConnection({
-      host: this.config.host,
-      port: this.config.port,
-      user: this.config.username,
-      password: this.config.password,
-      database: this.config.database,
-      ssl: this.config.sslMode ? { rejectUnauthorized: false } : undefined,
-    });
-  }
-
-  async disconnect(): Promise<void> {
-    if (this.connection) {
-      await this.connection.end();
-      this.connection = null;
-    }
-  }
-
-  async executeQuery(sql: string): Promise<QueryResult> {
-    if (!this.connection) {
-      throw new Error('Not connected to database');
+    async connect(): Promise<void> {
+        this.connection = await mariadb.createConnection({
+            host: this.config.host,
+            port: this.config.port,
+            user: this.config.username,
+            password: this.config.password,
+            database: this.config.database,
+            ssl: this.config.sslMode ? { rejectUnauthorized: false } : undefined,
+        });
     }
 
-    const result = await this.connection.query(sql);
+    async disconnect(): Promise<void> {
+        if (this.connection) {
+            await this.connection.end();
+            this.connection = null;
+        }
+    }
 
-    return {
-      rows: Array.isArray(result) ? result : [],
-      rowCount: Array.isArray(result) ? result.length : 0,
-    };
-  }
+    async executeQuery(sql: string): Promise<QueryResult> {
+        if (!this.connection) {
+            throw new Error('Not connected to database');
+        }
 
-  async getSchemas(): Promise<SchemaInfo[]> {
-    const result = await this.executeQuery('SHOW DATABASES');
-    return result.rows.map((row: any) => ({
-      name: row.Database,
-    }));
-  }
+        const result = await this.connection.query(sql);
 
-  async getTables(schemaName: string): Promise<TableInfo[]> {
-    const sql = `
+        return {
+            rows: Array.isArray(result) ? result : [],
+            rowCount: Array.isArray(result) ? result.length : 0,
+        };
+    }
+
+    async getSchemas(): Promise<SchemaInfo[]> {
+        const result = await this.executeQuery('SHOW DATABASES');
+        return result.rows.map((row: any) => ({
+            name: row.Database,
+        }));
+    }
+
+    async getTables(schemaName: string): Promise<TableInfo[]> {
+        const sql = `
       SELECT TABLE_NAME as name, TABLE_TYPE as type, TABLE_COMMENT as comment
       FROM information_schema.TABLES
       WHERE TABLE_SCHEMA = ?
       ORDER BY TABLE_NAME
     `;
 
-    const result = await this.executeQuery(this.formatQuery(sql, [schemaName]));
-    return result.rows.map((row: any) => ({
-      name: row.name,
-      type: row.type,
-      comment: row.comment || undefined,
-    }));
-  }
+        const result = await this.executeQuery(this.formatQuery(sql, [schemaName]));
+        return result.rows.map((row: any) => ({
+            name: row.name,
+            type: row.type,
+            comment: row.comment || undefined,
+        }));
+    }
 
-  async getTableStructure(schemaName: string, tableName: string): Promise<ColumnInfo[]> {
-    const sql = `
+    async getTableStructure(schemaName: string, tableName: string): Promise<ColumnInfo[]> {
+        const sql = `
       SELECT
         COLUMN_NAME as name,
         COLUMN_TYPE as type,
@@ -83,20 +83,20 @@ export class MariaDBConnector extends BaseConnector {
       ORDER BY ORDINAL_POSITION
     `;
 
-    const result = await this.executeQuery(this.formatQuery(sql, [schemaName, tableName]));
-    return result.rows.map((row: any) => ({
-      name: row.name,
-      type: row.type,
-      nullable: row.nullable === 'YES',
-      default: row.default,
-      comment: row.comment || undefined,
-      key: row.key || undefined,
-      extra: row.extra || undefined,
-    }));
-  }
+        const result = await this.executeQuery(this.formatQuery(sql, [schemaName, tableName]));
+        return result.rows.map((row: any) => ({
+            name: row.name,
+            type: row.type,
+            nullable: row.nullable === 'YES',
+            default: row.default,
+            comment: row.comment || undefined,
+            key: row.key || undefined,
+            extra: row.extra || undefined,
+        }));
+    }
 
-  async getIndexes(schemaName: string, tableName: string): Promise<IndexInfo[]> {
-    const sql = `
+    async getIndexes(schemaName: string, tableName: string): Promise<IndexInfo[]> {
+        const sql = `
       SELECT
         INDEX_NAME as name,
         GROUP_CONCAT(COLUMN_NAME ORDER BY SEQ_IN_INDEX) as columns,
@@ -109,32 +109,32 @@ export class MariaDBConnector extends BaseConnector {
       ORDER BY INDEX_NAME
     `;
 
-    const result = await this.executeQuery(this.formatQuery(sql, [schemaName, tableName]));
-    return result.rows.map((row: any) => ({
-      name: row.name,
-      columns: row.columns.split(','),
-      unique: row.non_unique === 0,
-      type: row.type,
-    }));
-  }
+        const result = await this.executeQuery(this.formatQuery(sql, [schemaName, tableName]));
+        return result.rows.map((row: any) => ({
+            name: row.name,
+            columns: row.columns.split(','),
+            unique: row.non_unique === 0,
+            type: row.type,
+        }));
+    }
 
-  async getProcedures(schemaName: string): Promise<ProcedureInfo[]> {
-    const sql = `
+    async getProcedures(schemaName: string): Promise<ProcedureInfo[]> {
+        const sql = `
       SELECT ROUTINE_NAME as name, ROUTINE_TYPE as type
       FROM information_schema.ROUTINES
       WHERE ROUTINE_SCHEMA = ?
       ORDER BY ROUTINE_NAME
     `;
 
-    const result = await this.executeQuery(this.formatQuery(sql, [schemaName]));
-    return result.rows.map((row: any) => ({
-      name: row.name,
-      type: row.type,
-    }));
-  }
+        const result = await this.executeQuery(this.formatQuery(sql, [schemaName]));
+        return result.rows.map((row: any) => ({
+            name: row.name,
+            type: row.type,
+        }));
+    }
 
-  async getProcedureDetails(schemaName: string, procedureName: string): Promise<ProcedureInfo | null> {
-    const sql = `
+    async getProcedureDetails(schemaName: string, procedureName: string): Promise<ProcedureInfo | null> {
+        const sql = `
       SELECT
         ROUTINE_NAME as name,
         ROUTINE_TYPE as type,
@@ -144,40 +144,40 @@ export class MariaDBConnector extends BaseConnector {
         AND ROUTINE_NAME = ?
     `;
 
-    const result = await this.executeQuery(this.formatQuery(sql, [schemaName, procedureName]));
-    if (result.rows.length === 0) {
-      return null;
+        const result = await this.executeQuery(this.formatQuery(sql, [schemaName, procedureName]));
+        if (result.rows.length === 0) {
+            return null;
+        }
+
+        const row = result.rows[0];
+        return {
+            name: row.name,
+            type: row.type,
+            definition: row.definition,
+        };
     }
 
-    const row = result.rows[0];
-    return {
-      name: row.name,
-      type: row.type,
-      definition: row.definition,
-    };
-  }
-
-  async ping(): Promise<boolean> {
-    try {
-      if (!this.connection) {
-        return false;
-      }
-      await this.connection.ping();
-      return true;
-    } catch {
-      return false;
+    async ping(): Promise<boolean> {
+        try {
+            if (!this.connection) {
+                return false;
+            }
+            await this.connection.ping();
+            return true;
+        } catch {
+            return false;
+        }
     }
-  }
 
-  protected escapeIdentifier(identifier: string): string {
-    return `\`${identifier.replace(/`/g, '``')}\``;
-  }
+    protected escapeIdentifier(identifier: string): string {
+        return `\`${identifier.replace(/`/g, '``')}\``;
+    }
 
-  private formatQuery(sql: string, params: any[]): string {
-    let formatted = sql;
-    params.forEach((param) => {
-      formatted = formatted.replace('?', `'${param.replace(/'/g, "''")}'`);
-    });
-    return formatted;
-  }
+    private formatQuery(sql: string, params: any[]): string {
+        let formatted = sql;
+        params.forEach(param => {
+            formatted = formatted.replace('?', `'${param.replace(/'/g, "''")}'`);
+        });
+        return formatted;
+    }
 }

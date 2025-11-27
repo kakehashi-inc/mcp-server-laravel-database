@@ -1,206 +1,200 @@
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 import {
-  ServerConfig,
-  DatabaseConfig,
-  DatabaseType,
-  SSHConfig,
-  CLIArguments,
-  TransportMode,
-  LogLevel,
-  EnvConfig,
+    ServerConfig,
+    DatabaseConfig,
+    DatabaseType,
+    SSHConfig,
+    CLIArguments,
+    TransportMode,
+    LogLevel,
+    EnvConfig,
 } from './types/index.js';
 import { parseEnvFile, getEnvConfig } from './utils/env-parser.js';
 import { detectSailPort } from './utils/sail-detector.js';
 export function parseArguments(): CLIArguments {
-  const argv = yargs(hideBin(process.argv))
-    .option('env', {
-      type: 'string',
-      description: '.env file path',
-    })
-    .option('db-connection', {
-      type: 'string',
-      description: 'Database connection type (mysql/pgsql/mariadb/sqlite)',
-      choices: ['mysql', 'pgsql', 'mariadb', 'sqlite'],
-    })
-    .option('db-host', {
-      type: 'string',
-      description: 'Database host',
-    })
-    .option('db-port', {
-      type: 'number',
-      description: 'Database port',
-    })
-    .option('db-database', {
-      type: 'string',
-      description: 'Database name',
-    })
-    .option('db-username', {
-      type: 'string',
-      description: 'Database username',
-    })
-    .option('db-password', {
-      type: 'string',
-      description: 'Database password',
-    })
-    .option('transport', {
-      type: 'string',
-      description: 'Transport mode',
-      choices: ['stdio', 'http'],
-      default: 'stdio',
-    })
-    .option('port', {
-      type: 'number',
-      description: 'HTTP server port',
-      default: 3333,
-    })
-    .option('listen', {
-      type: 'string',
-      description: 'HTTP server listen address',
-      default: 'localhost',
-    })
-    .option('readonly', {
-      type: 'boolean',
-      description: 'Read-only mode',
-      default: false,
-    })
-    .option('max-rows', {
-      type: 'number',
-      description: 'Maximum number of rows to return',
-    })
-    .option('ssl-mode', {
-      type: 'string',
-      description: 'SSL mode (disable/require/verify-ca/verify-full)',
-    })
-    .option('ssh-host', {
-      type: 'string',
-      description: 'SSH tunnel host',
-    })
-    .option('ssh-port', {
-      type: 'number',
-      description: 'SSH tunnel port',
-      default: 22,
-    })
-    .option('ssh-user', {
-      type: 'string',
-      description: 'SSH username',
-    })
-    .option('ssh-password', {
-      type: 'string',
-      description: 'SSH password',
-    })
-    .option('ssh-key', {
-      type: 'string',
-      description: 'SSH private key path',
-    })
-    .option('ssh-passphrase', {
-      type: 'string',
-      description: 'SSH key passphrase',
-    })
-    .option('id', {
-      type: 'string',
-      description: 'Instance identifier',
-    })
-    .option('log-level', {
-      type: 'string',
-      description: 'Log level',
-      choices: ['error', 'warn', 'info', 'debug'],
-      default: 'info',
-    })
-    .help()
-    .parseSync();
+    const argv = yargs(hideBin(process.argv))
+        .option('env', {
+            type: 'string',
+            description: '.env file path',
+        })
+        .option('db-connection', {
+            type: 'string',
+            description: 'Database connection type (mysql/pgsql/mariadb/sqlite)',
+            choices: ['mysql', 'pgsql', 'mariadb', 'sqlite'],
+        })
+        .option('db-host', {
+            type: 'string',
+            description: 'Database host',
+        })
+        .option('db-port', {
+            type: 'number',
+            description: 'Database port',
+        })
+        .option('db-database', {
+            type: 'string',
+            description: 'Database name',
+        })
+        .option('db-username', {
+            type: 'string',
+            description: 'Database username',
+        })
+        .option('db-password', {
+            type: 'string',
+            description: 'Database password',
+        })
+        .option('transport', {
+            type: 'string',
+            description: 'Transport mode',
+            choices: ['stdio', 'http'],
+            default: 'stdio',
+        })
+        .option('port', {
+            type: 'number',
+            description: 'HTTP server port',
+            default: 3333,
+        })
+        .option('listen', {
+            type: 'string',
+            description: 'HTTP server listen address',
+            default: 'localhost',
+        })
+        .option('readonly', {
+            type: 'boolean',
+            description: 'Read-only mode',
+            default: false,
+        })
+        .option('max-rows', {
+            type: 'number',
+            description: 'Maximum number of rows to return',
+        })
+        .option('ssl-mode', {
+            type: 'string',
+            description: 'SSL mode (disable/require/verify-ca/verify-full)',
+        })
+        .option('ssh-host', {
+            type: 'string',
+            description: 'SSH tunnel host',
+        })
+        .option('ssh-port', {
+            type: 'number',
+            description: 'SSH tunnel port',
+            default: 22,
+        })
+        .option('ssh-user', {
+            type: 'string',
+            description: 'SSH username',
+        })
+        .option('ssh-password', {
+            type: 'string',
+            description: 'SSH password',
+        })
+        .option('ssh-key', {
+            type: 'string',
+            description: 'SSH private key path',
+        })
+        .option('ssh-passphrase', {
+            type: 'string',
+            description: 'SSH key passphrase',
+        })
+        .option('id', {
+            type: 'string',
+            description: 'Instance identifier',
+        })
+        .option('log-level', {
+            type: 'string',
+            description: 'Log level',
+            choices: ['error', 'warn', 'info', 'debug'],
+            default: 'info',
+        })
+        .help()
+        .parseSync();
 
-  return argv as CLIArguments;
+    return argv as CLIArguments;
 }
 
 export function buildConfig(args: CLIArguments): ServerConfig {
-  const processEnvConfig = getEnvConfig();
-  const fileEnvConfig = args.env ? parseEnvFile(args.env) : undefined;
+    const processEnvConfig = getEnvConfig();
+    const fileEnvConfig = args.env ? parseEnvFile(args.env) : undefined;
 
-  // Apply priority: environment variables < .env file
-  const mergedEnvConfig: EnvConfig = {
-    ...processEnvConfig,
-    ...(fileEnvConfig ?? {}),
-  };
-
-  const dbType = (args['db-connection'] ??
-    mergedEnvConfig.DB_CONNECTION ??
-    'mysql') as DatabaseType;
-
-  const forwardPort = mergedEnvConfig.FORWARD_DB_PORT
-    ? parseInt(mergedEnvConfig.FORWARD_DB_PORT, 10)
-    : undefined;
-
-  const sailPort = detectSailPort(mergedEnvConfig);
-  const dbPort = args['db-port'] ?? sailPort ?? getDefaultPort(dbType);
-
-  const usingForwardedPort =
-    args['db-port'] === undefined &&
-    forwardPort !== undefined &&
-    !Number.isNaN(forwardPort) &&
-    sailPort === forwardPort;
-
-  const dbHost =
-    args['db-host'] ??
-    (usingForwardedPort ? '127.0.0.1' : mergedEnvConfig.DB_HOST ?? 'localhost');
-
-  const dbDatabase = args['db-database'] ?? mergedEnvConfig.DB_DATABASE;
-  if (!dbDatabase) {
-    throw new Error('Database name is required (--db-database or DB_DATABASE)');
-  }
-
-  const dbUsername = args['db-username'] ?? mergedEnvConfig.DB_USERNAME;
-  const dbPassword = args['db-password'] ?? mergedEnvConfig.DB_PASSWORD;
-
-  const database: DatabaseConfig = {
-    type: dbType,
-    host: dbHost,
-    port: dbPort,
-    database: dbDatabase,
-    username: dbUsername,
-    password: dbPassword,
-    sslMode: args['ssl-mode'],
-  };
-
-  // SSH configuration
-  let ssh: SSHConfig | undefined;
-  if (args['ssh-host'] && args['ssh-user']) {
-    ssh = {
-      host: args['ssh-host'],
-      port: args['ssh-port'] || 22,
-      username: args['ssh-user'],
-      password: args['ssh-password'],
-      privateKey: args['ssh-key'],
-      passphrase: args['ssh-passphrase'],
+    // Apply priority: environment variables < .env file
+    const mergedEnvConfig: EnvConfig = {
+        ...processEnvConfig,
+        ...(fileEnvConfig ?? {}),
     };
-  }
 
-  // Server configuration
-  const config: ServerConfig = {
-    database,
-    ssh,
-    transport: (args.transport || 'stdio') as TransportMode,
-    port: args.port || 3333,
-    host: args.listen || 'localhost',
-    readonly: args.readonly || false,
-    maxRows: args['max-rows'],
-    id: args.id,
-    logLevel: (args['log-level'] || 'info') as LogLevel,
-  };
+    const dbType = (args['db-connection'] ?? mergedEnvConfig.DB_CONNECTION ?? 'mysql') as DatabaseType;
 
-  return config;
+    const forwardPort = mergedEnvConfig.FORWARD_DB_PORT ? parseInt(mergedEnvConfig.FORWARD_DB_PORT, 10) : undefined;
+
+    const sailPort = detectSailPort(mergedEnvConfig);
+    const dbPort = args['db-port'] ?? sailPort ?? getDefaultPort(dbType);
+
+    const usingForwardedPort =
+        args['db-port'] === undefined &&
+        forwardPort !== undefined &&
+        !Number.isNaN(forwardPort) &&
+        sailPort === forwardPort;
+
+    const dbHost = args['db-host'] ?? (usingForwardedPort ? '127.0.0.1' : (mergedEnvConfig.DB_HOST ?? 'localhost'));
+
+    const dbDatabase = args['db-database'] ?? mergedEnvConfig.DB_DATABASE;
+    if (!dbDatabase) {
+        throw new Error('Database name is required (--db-database or DB_DATABASE)');
+    }
+
+    const dbUsername = args['db-username'] ?? mergedEnvConfig.DB_USERNAME;
+    const dbPassword = args['db-password'] ?? mergedEnvConfig.DB_PASSWORD;
+
+    const database: DatabaseConfig = {
+        type: dbType,
+        host: dbHost,
+        port: dbPort,
+        database: dbDatabase,
+        username: dbUsername,
+        password: dbPassword,
+        sslMode: args['ssl-mode'],
+    };
+
+    // SSH configuration
+    let ssh: SSHConfig | undefined;
+    if (args['ssh-host'] && args['ssh-user']) {
+        ssh = {
+            host: args['ssh-host'],
+            port: args['ssh-port'] || 22,
+            username: args['ssh-user'],
+            password: args['ssh-password'],
+            privateKey: args['ssh-key'],
+            passphrase: args['ssh-passphrase'],
+        };
+    }
+
+    // Server configuration
+    const config: ServerConfig = {
+        database,
+        ssh,
+        transport: (args.transport || 'stdio') as TransportMode,
+        port: args.port || 3333,
+        host: args.listen || 'localhost',
+        readonly: args.readonly || false,
+        maxRows: args['max-rows'],
+        id: args.id,
+        logLevel: (args['log-level'] || 'info') as LogLevel,
+    };
+
+    return config;
 }
 
 function getDefaultPort(dbType: DatabaseType): number {
-  switch (dbType) {
-    case 'mysql':
-    case 'mariadb':
-      return 3306;
-    case 'pgsql':
-      return 5432;
-    case 'sqlite':
-      return 0; // Not applicable
-    default:
-      return 0;
-  }
+    switch (dbType) {
+        case 'mysql':
+        case 'mariadb':
+            return 3306;
+        case 'pgsql':
+            return 5432;
+        case 'sqlite':
+            return 0; // Not applicable
+        default:
+            return 0;
+    }
 }
